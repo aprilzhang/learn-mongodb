@@ -1,0 +1,177 @@
+$regex $options
+
+$exists: true, $ne: null
+
+query.key is the same as query["key"]
+
+"field.key" can handle the case whether the field is an array, and items in the array contains the key.
+Note that for projection, "field.key" will include all keys in that field's array.
+
+Skip/limit/sort
+cursor.sort({key :1}); 1 means ascending, -1 means desending
+Can sort by multiple keys by passing in an array
+cursor.skip();
+cursor.limit();
+The order does not matter, mongodb always sort first, then skip then limit.
+better to sort on index
+
+
+rich document
+pre join/embed data
+no mongo joins
+no constraints
+atomic opearations
+no declared schema
+
+
+1NF的定义为：符合1NF的关系中的每个属性都不可再分
+只要在RDBMS中已经存在的数据表，一定是符合1NF的
+third normal form
+要求所有非鍵屬性都只和候選鍵有相關性，也就是說非鍵屬性之間應該是独立無關的
+
+2NF在1NF的基础之上，消除了非主属性对于码的部分函数依赖
+
+living without constraints and transation
+
+atomic
+1. restructive, work with single document with atomic opeation
+2. implement in software
+3. tolerate
+
+1-1
+whether to embed
+1. frequency of access
+2. size of item
+3. atomicity of data
+
+1-many 2 collection
+1-few can be one collection
+to avoid normalisation, embed with many to one
+
+many-many 2 collections
+
+Multikey indexes
+ensureIndex()
+
+Embeding benefit
+1. improved read performance
+2. one rount trip to the DB
+
+represents trees
+instead of storing parent id, list the ancestors
+
+storage engine
+affects the data file and index format
+
+MMAP, WiredTiger
+
+MMAP offers collections level concurrency- multiple read, single write lock
+in place update
+power of 2 size
+
+
+WiredTiger offers document level concurrency
+compression of data/indexes
+no inplace update
+
+
+index
+(a,b,c)-> you can search by a or (a,b), or (a,b,c)
+index creates a BTree, so it will be faster to find item by index, but meanwhile, writes will be slow as it need to maintain BTree.
+So add all items, then build index
+
+createIndex, getIndexes(), dropIndex();
+
+Multikey indexes
+Cannot have compond index that two indexes are array indexes in one document
+
+{unique:true}
+_id is unique although db does not tell you that.
+
+remove item can have option {justOne: true}
+
+sparse index
+
+A sparse index cannot be used for sorting
+
+foreground and background index creation
+foreground is fast but blocks read and writes, vice versa for background
+
+cannot explain insert
+
+executionStats, allPlansExecution
+
+covered query -> only need to scan indexes
+
+query plan and cache
+
+working set
+memory/disk
+
+Important to fit working set in memory, especially the indexes
+stats() to find indx size
+
+geospatial indexes
+ensureIndex({"location":"2d", type:1})
+$near
+
+2dsphere
+#geometry, $maxDistance
+
+text search
+ensureIndex({:"text"})
+$text:{$search:''}
+
+$meta:'textScore'
+
+hint()
+specify the index that we want to use
+
+put quality query key in front of ran
+
+mongo logs slow query
+
+--profile 0,1 or 2
+db.system.profile database
+db.getProfilingLevel()
+db.setProfilingLevel(1)
+db.getProfilingStatus()
+
+mongotop
+
+mongostat
+
+sharding
+mongos
+insert must include entire shard key
+if no shard key, then mongos will broadcast, poor performance
+
+aggregation framework
+match
+project
+sort
+skip
+limit
+
+.aggregate([{},{}...])
+
+powerful project
+
+"$key"
+
+$unwind
+{$unwind: "$key"}
+
+{$filter :{input:"$key", as "name", cond: {$$}}
+
+{$arrayElemAt: ["$key",index]} negative index is from end
+
+$slice
+
+accumulators
+
+$group :{_id: {name:"$key"}, other fields....}
+
+$sum:1
+
+$push:{}

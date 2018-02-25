@@ -1,0 +1,84 @@
+db.companies.aggregate( [
+    { $match: { "relationships.person": { $ne: null }, "relationships.person.first_name":"Eric" } },
+    { $project: { person: "$relationships.person", _id: 0, companyName: "$name" } },
+    { $unwind: "$person" },
+    { $group: {
+        _id: "$person",
+        uniqueCompanies:  {$addToSet: "$companyName"}
+    } },
+    {$project:{person:1,count:{$size:"$uniqueCompanies"}} },
+    {$sort: {count:-1}}
+] )
+
+answer:
+db.companies.aggregate([
+    { $project: { relationships: 1, _id: 0, name : 1, permalink: 1 } },
+    { $unwind: "$relationships" },
+    { $group: {
+        _id: { person: "$relationships.person" },
+        gross_companies: { $push : "$permalink" },
+        unique_companies: { $addToSet : "$permalink" }
+    } },
+    { $project: {
+        _id: 0,
+        person: "$_id.person",
+        gross_companies: 1,
+        unique_companies: 1,
+        unique_number_of_companies: { $size: "$unique_companies" },
+        gross_number_of_companies: { $size: "$gross_companies" }
+    } },
+    { $sort: { unique_number_of_companies: -1 } }
+]).pretty()
+
+db.grades.aggregate( [
+    { $unwind: "$scores" },
+    { $match: { "scores.type": { $ne: "quiz" } } },
+    { $group: {
+        _id: {class_id: "$class_id", student_id:  "$student_id"},
+        averageScore: {$avg: "$scores.score"}
+    } },
+    { $group: {
+        _id: {class_id: "$_id.class_id"},
+        averageClassScore: {$avg: "$averageScore"}
+    } },
+    {$sort: {averageClassScore:-1}}
+] )
+
+answer:
+db.grades.aggregate( [
+{ $unwind : "$scores" },
+{ $match : { "scores.type" : { $ne : "quiz" } } },
+{ $group : { _id : { student_id : "$student_id", class_id : "$class_id" }, avg : { $avg : "$scores.score" } } },
+{ $group : { _id : "$_id.class_id", avg : { $avg : "$avg" } } },
+{ $sort : { "avg" : -1 } },
+{ $limit : 5 } ] )
+
+
+db.companies.aggregate([
+    { $match: {founded_year:2004, funding_rounds: {$ne:null}}},
+    { $project: {name: 1, funding_rounds:1, counts: { $size: "$funding_rounds"}, _id:-1 }},
+    { $match: {counts: {$gte:5}}},
+    { $unwind: "$funding_rounds"},
+    { $group: {
+        _id: {company: "$name"},
+        averageFunding: {$avg: "$funding_rounds.raised_amount"}
+    } },
+    { $sort : { averageFunding : 1 } }
+])
+
+answer:
+db.companies.aggregate([
+    { $match: { founded_year: 2004 } },
+    { $project: {
+        _id: 0,
+        name: 1,
+        funding_rounds: 1,
+        num_rounds: { $size: "$funding_rounds" }
+    } },
+    { $match: { num_rounds: { $gte: 5 } } },
+    { $project: {
+        name: 1,
+        avg_round: { $avg: "$funding_rounds.raised_amount" }
+    } },
+    { $sort: { avg_round: 1 } }
+]).pretty()
